@@ -61,14 +61,24 @@ class Model(nn.Module):
         self.config=config
         self.tokenizer=tokenizer
         self.args=args
+        self.linear = nn.Linear(768, args.num_labels)
         
 
     def forward(self, input_ids=None,labels=None):
         
         outputs = self.encoder(input_ids,attention_mask=input_ids.ne(1))[0]
+        # [2, 256, 768]
         print("2:", outputs.shape)
         outputs = (outputs*input_ids.ne(1)[:,:,None]).sum(1)/input_ids.ne(1).sum(-1)[:,None]
-        print("3:", torch.nn.functional.normalize(outputs, p=2, dim=1).shape) 
+        # [2, 768]
+        output_x = torch.nn.functional.normalize(outputs, p=2, dim=1)
+        print("3:", output_x.shape)
+
+        output = self.linear(output_x)
+
+        print(output.shape)
+        return output
+        
         # [4, 768]
         # return torch.nn.functional.normalize(outputs, p=2, dim=1)
         '''
