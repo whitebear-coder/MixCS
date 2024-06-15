@@ -178,8 +178,9 @@ def train(args, train_dataset, model, tokenizer):
             labels = torch.nn.functional.one_hot(labels, args.num_labels)
             # model.train()
             print("labels:{}".format(labels.shape))
-            loss,logits = model(inputs,labels)
+            loss, logits = model(input_ids=inputs,labels=labels)
 
+            # assert 1==0
             if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel training
 
