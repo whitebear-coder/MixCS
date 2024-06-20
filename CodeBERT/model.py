@@ -62,6 +62,13 @@ class Model(nn.Module):
         self.tokenizer=tokenizer
         self.args=args
         self.linear = nn.Linear(768, args.num_labels)
+
+        unfreeze_layers = ['layer.1']
+        for name, param in self.encoder.named_parameters():
+            param.requires_grad = False
+            for ele in unfreeze_layers:
+                if ele in name:
+                    param.requires_grad = True
         
 
     def forward(self, input_ids=None,labels=None):
@@ -84,7 +91,6 @@ class Model(nn.Module):
             return loss,prob
         else:
             return prob
-        
         '''
         print("input_ids:{}".format(input_ids.shape))
         # logits=self.encoder(input_ids,attention_mask=input_ids.ne(1))[0]

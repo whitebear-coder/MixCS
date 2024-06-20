@@ -88,13 +88,37 @@ class TextDataset(Dataset):
     def __getitem__(self, i):
         return torch.tensor(self.examples[i].input_ids),torch.tensor(self.examples[i].label)
 
+class CodeData(Dataset):
+    def __init__(self, tokenizer, args, file_path=None):
+        dic_lang = {"java":0, "javascript":1, "php":2, "python":3, "ruby":4, "go":5}
+        self.examples = []
+        for lang in dic_lang.keys():
+            file_path = os.path.join(args.root_data_file, lang, file_path)
+            with open(file_path) as f:
+                for line in f:
+                    js=json.loads(line.strip())
+                    code=' '.join(js['code'].split())
+                    code_tokens=tokenizer.tokenize(code)[:args.block_size-2]
+                    source_tokens =[tokenizer.cls_token]+code_tokens+[tokenizer.sep_token]
+                    source_ids =  tokenizer.convert_tokens_to_ids(source_tokens)
+                    padding_length = args.block_size - len(source_ids)
+                    source_ids+=[tokenizer.pad_token_id]*padding_length
+                    inputFeatures = InputFeatures(source_tokens,source_ids,dic_lang[lang])
+                    self.examples.append(InputFeatures)
+                
+    def __len__(self):
+        return len(self.examples)
+
+    def __getitem__(self, i):
+        return torch.tensor(self.examples[i].input_ids),torch.tensor(self.examples[i].label)
+
 
 class CodeDataset(Dataset):
     def __init__(self, tokenizer, args, file_path=None):
         dic_lang = {"C":0, "C#":1, "C++":2, "D":3, "Haskell":4, "Java":5, "JavaScript":6, "PHP":7, "Python":8, "Rust":9}
         self.examples = []
         for lang in dic_lang.keys():
-            lang_dir = os.path.join(args.train_data_file, lang)
+            lang_dir = os.path.join(args.root_data_file, lang, file_path)
             lang_files = os.listdir(lang_dir)
             for lang_file in lang_files:
                 with open(os.path.join(lang_dir, lang_file), 'r') as f:
@@ -306,6 +330,8 @@ def test(args, model, tokenizer):
 def main():
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("--root_data_file", default=None, type=str, required=True,
+                    help="The input root data file (a text file).")
     ## Required parameters
     parser.add_argument("--train_data_file", default=None, type=str, required=True,
                         help="The input training data file (a text file).")
@@ -414,7 +440,8 @@ def main():
     
     # Training
     if args.do_train:
-        train_dataset = CodeDataset(tokenizer, args, args.train_data_file)
+        # train_data_file = os.path.join("/home/linzexu/meta_code/Meta-DMoE-main/CSN")
+        train_dataset = CodeData(tokenizer, args, args.train_data_file)
         train(args, train_dataset, model, tokenizer)
 
     # Evaluation
