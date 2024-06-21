@@ -104,7 +104,7 @@ class CodeData(Dataset):
                     padding_length = args.block_size - len(source_ids)
                     source_ids+=[tokenizer.pad_token_id]*padding_length
                     inputFeatures = InputFeatures(source_tokens,source_ids,dic_lang[lang])
-                    self.examples.append(InputFeatures)
+                    self.examples.append(inputFeatures)
                 
     def __len__(self):
         return len(self.examples)
@@ -192,16 +192,16 @@ def train(args, train_dataset, model, tokenizer):
     model.zero_grad()
 
     for idx in range(args.num_train_epochs):
-        bar = tqdm(train_dataloader,total=len(train_dataloader))
+        # bar = tqdm(train_dataloader,total=len(train_dataloader))
         losses=[]
-        for step, batch in enumerate(bar):
+        for step, batch in enumerate(train_dataloader):
             inputs = batch[0].to(args.device)
-            labels=batch[1].to(args.device)
-            print("inputs:{}".format(inputs.size()))
+            labels = batch[1].to(args.device)
+            # print("inputs:{}".format(inputs.size()))
             # print(labels.size())
             labels = torch.nn.functional.one_hot(labels, args.num_labels)
             # model.train()
-            print("labels:{}".format(labels.shape))
+            # print("labels:{}".format(labels.shape))
             loss, logits = model(input_ids=inputs,labels=labels)
 
             # assert 1==0
@@ -212,7 +212,7 @@ def train(args, train_dataset, model, tokenizer):
             torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
 
             losses.append(loss.item())
-            bar.set_description("epoch {} loss {}".format(idx,round(np.mean(losses),3)))
+            # bar.set_description("epoch {} loss {}".format(idx,round(np.mean(losses),3)))
             optimizer.step()
             optimizer.zero_grad()
             scheduler.step()
@@ -240,7 +240,7 @@ def train(args, train_dataset, model, tokenizer):
 def evaluate(args, model, tokenizer):
     eval_output_dir = args.output_dir
 
-    eval_dataset = TextDataset(tokenizer, args,args.eval_data_file)
+    eval_dataset = CodeDataset(tokenizer, args,args.eval_data_file)
 
     if not os.path.exists(eval_output_dir):
         os.makedirs(eval_output_dir)
@@ -287,7 +287,7 @@ def evaluate(args, model, tokenizer):
 
 def test(args, model, tokenizer):
     # Note that DistributedSampler samples randomly
-    eval_dataset = TextDataset(tokenizer, args,args.test_data_file)
+    eval_dataset = CodeData(tokenizer, args,args.test_data_file)
     eval_sampler = SequentialSampler(eval_dataset)
     eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=args.eval_batch_size)
 

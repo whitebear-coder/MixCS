@@ -75,19 +75,19 @@ class Model(nn.Module):
         
         outputs = self.encoder(input_ids,attention_mask=input_ids.ne(1))[0]
         # [2, 256, 768]
-        print("2:", outputs.shape)
+        # print("2:", outputs.shape)
         outputs = (outputs*input_ids.ne(1)[:,:,None]).sum(1)/input_ids.ne(1).sum(-1)[:,None]
         # [2, 768]
         output_x = torch.nn.functional.normalize(outputs, p=2, dim=1)
-        print("3:", output_x.shape)
+        # print("3:", output_x.shape)
         output_xx = self.linear(output_x)
-        print("4:", output_xx.shape)
+        # print("4:", output_xx.shape)
         prob=torch.nn.functional.log_softmax(output_xx,-1)
-        print("5:", prob.shape)
+        # print("5:", prob.shape)
 
         if labels is not None:
             loss = -torch.sum(prob*labels)
-            print(loss, prob.shape)
+            # print(loss, prob.shape)
             return loss,prob
         else:
             return prob
